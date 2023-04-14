@@ -1,0 +1,17 @@
+[package]
+name = "yew-more-hooks"
+version = "0.1.0"
+edition = "2021"
+authors = [
+    "Jens Reimann <ctron@dentrassi.de>"
+]
+categories = ["wasm", "web-programming", "gui"]
+keywords = ["yew", "hooks"]
+license = "Apache-2.0"
+readme = "README.md"
+description = "More hooks for Yew"
+repository = "https://github.com/ctron/yew-more-hooks"
+
+[dependencies]
+gloo-utils = "0.1"
+yew = "0.20"
