@@ -68,7 +68,11 @@ impl<T, E> Deref for UseAsyncHandle<T, E> {
     }
 }
 
-impl<T, E> Clone for UseAsyncHandle<T, E> {
+impl<T, E> Clone for UseAsyncHandle<T, E>
+where
+    T: Clone,
+    E: Clone,
+{
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -133,8 +137,8 @@ where
 pub fn use_async<F, T, E>(future: F) -> UseAsyncHandle<T, E>
 where
     F: Future<Output = Result<T, E>> + 'static,
-    T: Clone + 'static,
-    E: Clone + 'static,
+    T: 'static,
+    E: 'static,
 {
     use_async_with_options(future, UseAsyncOptions::default())
 }
@@ -178,8 +182,8 @@ where
 pub fn use_async_with_options<F, T, E>(future: F, options: UseAsyncOptions) -> UseAsyncHandle<T, E>
 where
     F: Future<Output = Result<T, E>> + 'static,
-    T: Clone + 'static,
-    E: Clone + 'static,
+    T: 'static,
+    E: 'static,
 {
     let inner = use_state(UseAsyncState::default);
     let future_ref = use_mut_latest(Some(future));
