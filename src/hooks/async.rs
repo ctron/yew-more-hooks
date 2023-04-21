@@ -113,7 +113,7 @@ where
 ///         <div>
 ///             <button {onclick} disabled={state.is_processing()}>{ "Start loading" }</button>
 ///             {
-///                 match state {
+///                 match *state {
 ///                     UseAsyncState::Pending => html! {},
 ///                     UseAsyncState::Loading => html! { "Loading" },
 ///                     UseAsyncState::Ready(Ok(data)) => html! { data },
@@ -158,7 +158,7 @@ where
 ///     html! {
 ///         <div>
 ///             {
-///                 match state {
+///                 match *state {
 ///                     UseAsyncState::Pending => html! {},
 ///                     UseAsyncState::Loading => html! { "Loading" },
 ///                     UseAsyncState::Ready(Ok(data)) => html! { data },
