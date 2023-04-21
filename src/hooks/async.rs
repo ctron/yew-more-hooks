@@ -98,7 +98,7 @@ where
 /// ```rust
 /// # use yew::prelude::*;
 /// #
-/// use yew_hooks::prelude::*;
+/// use yew_more_hooks::prelude::*;
 ///
 /// #[function_component(Async)]
 /// fn async_test() -> Html {
@@ -117,9 +117,9 @@ where
 ///         <div>
 ///             <button {onclick} disabled={state.is_processing()}>{ "Start loading" }</button>
 ///             {
-///                 match *state {
+///                 match &*state {
 ///                     UseAsyncState::Pending => html! {},
-///                     UseAsyncState::Loading => html! { "Loading" },
+///                     UseAsyncState::Processing => html! { "Loading" },
 ///                     UseAsyncState::Ready(Ok(data)) => html! { data },
 ///                     UseAsyncState::Ready(Err(error)) => html! { error },
 ///                 }
@@ -151,7 +151,7 @@ where
 /// ```rust
 /// # use yew::prelude::*;
 /// #
-/// use yew_hooks::prelude::*;
+/// use yew_more_hooks::prelude::*;
 ///
 /// #[function_component(Async)]
 /// fn async_test() -> Html {
@@ -162,9 +162,9 @@ where
 ///     html! {
 ///         <div>
 ///             {
-///                 match *state {
+///                 match &*state {
 ///                     UseAsyncState::Pending => html! {},
-///                     UseAsyncState::Loading => html! { "Loading" },
+///                     UseAsyncState::Processing => html! { "Loading" },
 ///                     UseAsyncState::Ready(Ok(data)) => html! { data },
 ///                     UseAsyncState::Ready(Err(error)) => html! { error },
 ///                 }
@@ -231,6 +231,51 @@ impl<T, E> Deref for UseAsyncHandleDeps<T, E> {
     }
 }
 
+/// This hook returns state and will run the future provided by the function every time the
+/// dependencies change.
+///
+/// See [`use_async_with_cloned_deps`] when your dependencies can be cloned.
+///
+/// # Example
+///
+/// ```rust
+/// # use yew::prelude::*;
+/// #
+/// use yew_more_hooks::prelude::*;
+///
+/// #[derive(Clone, Debug, PartialEq, Properties)]
+/// struct Props {
+///   user_id: usize,
+/// }
+///
+/// #[function_component(Async)]
+/// fn async_test(props: &Props) -> Html {
+///     let state = use_async_with_deps(|user| {
+///         let user = *user;
+///         async move {
+///             fetch(format!("/api/user/{user}")).await
+///         }
+///     }, props.user_id);
+///     
+///     html! {
+///         <div>
+///             {
+///                 match &*state {
+///                     UseAsyncState::Pending => html! {},
+///                     UseAsyncState::Processing => html! { "Loading" },
+///                     UseAsyncState::Ready(Ok(data)) => html! { data },
+///                     UseAsyncState::Ready(Err(error)) => html! { error },
+///                 }
+///             }
+///         </div>
+///     }
+/// }
+///
+/// async fn fetch(url: String) -> Result<String, String> {
+///     // You can use reqwest to fetch your http api
+///     Ok(String::from("Jet Li"))
+/// }
+/// ```
 #[hook]
 pub fn use_async_with_deps<F, T, E, D, Fut>(f: F, deps: D) -> UseAsyncHandleDeps<T, E>
 where
@@ -273,6 +318,62 @@ where
     };
 
     UseAsyncHandleDeps { inner }
+}
+
+/// This hook returns state and will run the future provided by the function every time the
+/// dependencies change.
+///
+/// Compared to [`use_async_with_deps`] it requires the dependencies to implement [`Clone`] and
+/// will pass cloned dependencies on to the function creating the future, possibly removing one
+/// step on the provided code.
+///
+/// # Example
+///
+/// ```rust
+/// # use yew::prelude::*;
+/// #
+/// use yew_more_hooks::prelude::*;
+///
+/// #[derive(Clone, Debug, PartialEq, Properties)]
+/// struct Props {
+///   user_id: usize,
+/// }
+///
+/// #[function_component(Async)]
+/// fn async_test(props: &Props) -> Html {
+///     let state = use_async_with_cloned_deps(|user| async move {
+///         fetch(format!("/api/user/{user}")).await
+///     }, props.user_id);
+///     
+///     html! {
+///         <div>
+///             {
+///                 match &*state {
+///                     UseAsyncState::Pending => html! {},
+///                     UseAsyncState::Processing => html! { "Loading" },
+///                     UseAsyncState::Ready(Ok(data)) => html! { data },
+///                     UseAsyncState::Ready(Err(error)) => html! { error },
+///                 }
+///             }
+///         </div>
+///     }
+/// }
+///
+/// async fn fetch(url: String) -> Result<String, String> {
+///     // You can use reqwest to fetch your http api
+///     Ok(String::from("Jet Li"))
+/// }
+/// ```
+#[hook]
+pub fn use_async_with_cloned_deps<F, T, E, D, Fut>(f: F, deps: D) -> UseAsyncHandleDeps<T, E>
+where
+    F: FnOnce(D) -> Fut + 'static,
+    Fut: Future<Output = Result<T, E>> + 'static,
+    T: 'static,
+    E: 'static,
+    D: Clone + PartialEq + 'static,
+{
+    use_async_with_deps(|deps| f(deps.clone()), deps)
 }
 
 #[cfg(test)]
