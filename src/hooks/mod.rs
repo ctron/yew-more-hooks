@@ -1,6 +1,6 @@
 #[cfg(feature = "yew-hooks")]
-mod r#async;
-mod open;
+pub mod r#async;
+pub mod open;
 
 pub use open::*;
 #[cfg(feature = "yew-hooks")]
