@@ -217,3 +217,91 @@ where
 
     UseAsyncHandle { inner, run }
 }
+
+/// State handle for the [`use_async`] hook.
+pub struct UseAsyncHandleDeps<T, E> {
+    inner: UseStateHandle<UseAsyncState<T, E>>,
+}
+
+impl<T, E> Deref for UseAsyncHandleDeps<T, E> {
+    type Target = UseAsyncState<T, E>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+#[hook]
+pub fn use_async_with_deps<F, T, E, D, Fut>(f: F, deps: D) -> UseAsyncHandleDeps<T, E>
+where
+    F: FnOnce(&D) -> Fut + 'static,
+    Fut: Future<Output = Result<T, E>> + 'static,
+    T: 'static,
+    E: 'static,
+    D: PartialEq + 'static,
+{
+    let inner = use_state(UseAsyncState::default);
+
+    let run = {
+        let inner = inner.clone();
+        Rc::new(move |future| {
+            let inner = inner.clone();
+            spawn_local(async move {
+                // Set state to processing
+                inner.set(UseAsyncState::Processing);
+                // Process and update
+                inner.set(UseAsyncState::Ready(future.await));
+            });
+        })
+    };
+
+    let future_ref = use_mut_latest(Some(f));
+
+    {
+        let run = run.clone();
+        use_effect_with_deps(
+            move |deps| {
+                let future_ref = future_ref.current();
+                let future = (*future_ref.borrow_mut()).take();
+
+                if let Some(future) = future {
+                    run(future(&deps));
+                }
+            },
+            deps,
+        )
+    };
+
+    UseAsyncHandleDeps { inner }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test() {
+        async fn fetch(value: &str) -> Result<String, ()> {
+            Ok(format!("foo/{value}"))
+        }
+
+        #[function_component(Test)]
+        fn test() -> Html {
+            let props = String::new();
+
+            let fetch = use_async_with_deps(
+                |props| {
+                    let props = props.clone();
+                    async move { fetch(&props).await }
+                },
+                props.clone(),
+            );
+            match &*fetch {
+                UseAsyncState::Pending | UseAsyncState::Processing => html!(),
+                UseAsyncState::Ready(_) => html!(),
+            }
+        }
+
+        let _html = html!(<Test/>);
+    }
+}
