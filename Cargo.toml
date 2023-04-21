@@ -1,6 +1,6 @@
 [package]
 name = "yew-more-hooks"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = [
     "Jens Reimann <ctron@dentrassi.de>"
@@ -14,4 +14,7 @@ repository = "https://github.com/ctron/yew-more-hooks"
 
 [dependencies]
 gloo-utils = "0.1"
+wasm-bindgen-futures = "0.4"
 yew = "0.20"
+
+yew-hooks = { version = "0.2", optional = true }
