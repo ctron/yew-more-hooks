@@ -36,9 +36,33 @@ impl<T, E> Default for UseAsyncState<T, E> {
 }
 
 impl<T, E> UseAsyncState<T, E> {
+    /// Checks if the task is processing
+    ///
+    /// This does only check for [`Self::Processing`] and ignores [`Self::Pending`]. It is intended
+    /// to check if the task should be able to be started, like mapping the result to a "disabled"
+    /// state on a button, triggering the task.
     #[inline]
     pub fn is_processing(&self) -> bool {
         matches!(self, Self::Processing)
+    }
+
+    /// Return the data, if there is some.
+    ///
+    /// This only returns data if the state currently is a resolved async task with an [`Ok`]
+    /// outcome.
+    pub fn data(&self) -> Option<&T> {
+        match self {
+            Self::Ready(Ok(data)) => Some(data),
+            _ => None,
+        }
+    }
+
+    /// Return the error, if there is some.
+    pub fn error(&self) -> Option<&E> {
+        match self {
+            Self::Ready(Err(err)) => Some(err),
+            _ => None,
+        }
     }
 }
 
