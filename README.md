@@ -9,6 +9,7 @@ More hooks for [Yew](https://yew.rs/):
 
 ## Hooks
 
-| Name | Description  | 
-| ---- |--------------|
-| `use_open` | Open a link  |
+| Name        | Description                | 
+|-------------|----------------------------|
+| `use_async` | Perform an async operation |
+| `use_open`  | Open a link                |
