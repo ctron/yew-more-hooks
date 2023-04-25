@@ -243,8 +243,16 @@ where
 }
 
 /// State handle for the [`use_async`] hook.
+#[derive(Clone, PartialEq)]
 pub struct UseAsyncHandleDeps<T, E> {
     inner: UseStateHandle<UseAsyncState<T, E>>,
+}
+
+impl<T, E> UseAsyncHandleDeps<T, E> {
+    /// Update `data` directly.
+    pub fn update(&self, data: T) {
+        self.inner.set(UseAsyncState::Ready(Ok(data)));
+    }
 }
 
 impl<T, E> Deref for UseAsyncHandleDeps<T, E> {
