@@ -18,3 +18,9 @@ wasm-bindgen-futures = "0.4"
 yew = "0.20"
 
 yew-hooks = { version = "0.2", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "Window"
+]
