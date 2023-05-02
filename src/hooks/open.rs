@@ -1,3 +1,5 @@
+//! Open URLs
+
 use yew::prelude::*;
 
 /// Open a URL in the provided target.

@@ -1,3 +1,5 @@
+//! Additional hooks for the Yew hook system
+
 #[cfg(feature = "yew-hooks")]
 pub mod r#async;
 pub mod open;

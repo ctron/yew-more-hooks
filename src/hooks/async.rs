@@ -1,3 +1,5 @@
+//! Handle asynchronous tasks
+
 // NOTE: This is based on the use_async implementation from https://github.com/jetli/yew-hooks
 
 use std::ops::Deref;

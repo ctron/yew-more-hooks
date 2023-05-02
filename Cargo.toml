@@ -24,3 +24,7 @@ version = "0.3"
 features = [
     "Window"
 ]
+
+[package.metadata.docs.rs]
+all-features = true
+
