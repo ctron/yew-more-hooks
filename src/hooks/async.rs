@@ -24,7 +24,7 @@ impl UseAsyncOptions {
 }
 
 /// State for an async future.
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum UseAsyncState<T, E> {
     Pending,
     Processing,
@@ -438,5 +438,16 @@ mod test {
         }
 
         let _html = html!(<Test/>);
+    }
+
+    #[test]
+    fn test_clone() {
+        struct NotClone;
+        let _state: UseAsyncState<NotClone, ()> = Default::default();
+
+        #[derive(Clone)]
+        struct CanClone;
+        let state: UseAsyncState<CanClone, ()> = Default::default();
+        let _state = state.clone();
     }
 }
