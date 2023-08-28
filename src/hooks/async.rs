@@ -17,7 +17,7 @@ pub struct UseAsyncOptions {
 }
 
 impl UseAsyncOptions {
-    /// Automatically run when mount
+    /// Automatically run when mounted
     pub const fn enable_auto() -> Self {
         Self { auto: true }
     }
