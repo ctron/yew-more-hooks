@@ -1,14 +1,22 @@
 //! Handle asynchronous tasks
+//!
+//! ## Concurrency
+//!
+//! It is possible that asynchronous tasks run in parallel. So
 
-// NOTE: This is based on the use_async implementation from https://github.com/jetli/yew-hooks
+// NOTE: This was originally based on the use_async implementation from
+// https://github.com/jetli/yew-hooks
 
-use std::ops::Deref;
-use std::{future::Future, rc::Rc};
+use std::{
+    future::Future, ops::Deref, rc::Rc, sync::atomic::AtomicU64, sync::atomic::Ordering::SeqCst,
+};
 
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use yew_hooks::{use_mount, use_mut_latest};
+
+static ID: AtomicU64 = AtomicU64::new(0);
 
 /// Options for [`use_async_with_options`].
 #[derive(Default)]
@@ -20,6 +28,54 @@ impl UseAsyncOptions {
     /// Automatically run when mounted
     pub const fn enable_auto() -> Self {
         Self { auto: true }
+    }
+}
+
+pub struct AsyncStateVersion<T, E> {
+    pub state: UseAsyncState<T, E>,
+    version: u64,
+}
+
+impl<T, E> Reducible for AsyncStateVersion<T, E> {
+    type Action = AsyncStateVersion<T, E>;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        if action.version >= self.version {
+            Rc::new(action)
+        } else {
+            self
+        }
+    }
+}
+
+impl<T, E> PartialEq for AsyncStateVersion<T, E>
+where
+    T: PartialEq,
+    E: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.state == other.state
+    }
+}
+
+impl<T, E> Clone for AsyncStateVersion<T, E>
+where
+    T: Clone,
+    E: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            state: self.state.clone(),
+            version: self.version,
+        }
+    }
+}
+
+impl<T, E> Deref for AsyncStateVersion<T, E> {
+    type Target = UseAsyncState<T, E>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
     }
 }
 
@@ -69,8 +125,9 @@ impl<T, E> UseAsyncState<T, E> {
 }
 
 /// State handle for the [`use_async`] hook.
+#[derive(Clone)]
 pub struct UseAsyncHandle<T, E> {
-    inner: UseStateHandle<UseAsyncState<T, E>>,
+    inner: UseReducerHandle<AsyncStateVersion<T, E>>,
     run: Rc<dyn Fn()>,
 }
 
@@ -82,7 +139,10 @@ impl<T, E> UseAsyncHandle<T, E> {
 
     /// Update `data` directly.
     pub fn update(&self, data: T) {
-        self.inner.set(UseAsyncState::Ready(Ok(data)));
+        self.inner.dispatch(AsyncStateVersion {
+            state: UseAsyncState::Ready(Ok(data)),
+            version: ID.fetch_add(1, SeqCst),
+        });
     }
 }
 
@@ -91,19 +151,6 @@ impl<T, E> Deref for UseAsyncHandle<T, E> {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
-    }
-}
-
-impl<T, E> Clone for UseAsyncHandle<T, E>
-where
-    T: Clone,
-    E: Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            run: self.run.clone(),
-        }
     }
 }
 
@@ -211,24 +258,22 @@ where
     T: 'static,
     E: 'static,
 {
-    let inner = use_state(UseAsyncState::default);
+    let inner = use_reducer(|| AsyncStateVersion {
+        state: UseAsyncState::default(),
+        version: 0,
+    });
     let future_ref = use_mut_latest(Some(future));
 
     let run = {
         let inner = inner.clone();
         Rc::new(move || {
             let inner = inner.clone();
-            let future_ref = future_ref.clone();
-            spawn_local(async move {
-                let future_ref = future_ref.current();
-                let future = (*future_ref.borrow_mut()).take();
+            let future_ref = future_ref.current();
+            let future = (*future_ref.borrow_mut()).take();
 
-                if let Some(future) = future {
-                    // Set state to processing
-                    inner.set(UseAsyncState::Processing);
-                    inner.set(UseAsyncState::Ready(future.await));
-                }
-            });
+            if let Some(future) = future {
+                run_task(future, inner);
+            }
         })
     };
 
@@ -244,16 +289,44 @@ where
     UseAsyncHandle { inner, run }
 }
 
+fn run_task<F, T, E>(future: F, inner: UseReducerHandle<AsyncStateVersion<T, E>>)
+where
+    F: Future<Output = Result<T, E>> + 'static,
+    T: 'static,
+    E: 'static,
+{
+    let inner = inner.clone();
+    spawn_local(async move {
+        // fetch and increment (we get the current value)
+        let version = ID.fetch_add(1, SeqCst);
+
+        // Set state to processing
+        inner.dispatch(AsyncStateVersion {
+            state: UseAsyncState::Processing,
+            version,
+        });
+
+        // Process and update
+        inner.dispatch(AsyncStateVersion {
+            state: UseAsyncState::Ready(future.await),
+            version,
+        });
+    });
+}
+
 /// State handle for the [`use_async`] hook.
 #[derive(Clone, PartialEq)]
 pub struct UseAsyncHandleDeps<T, E> {
-    inner: UseStateHandle<UseAsyncState<T, E>>,
+    inner: UseReducerHandle<AsyncStateVersion<T, E>>,
 }
 
 impl<T, E> UseAsyncHandleDeps<T, E> {
     /// Update `data` directly.
     pub fn update(&self, data: T) {
-        self.inner.set(UseAsyncState::Ready(Ok(data)));
+        self.inner.dispatch(AsyncStateVersion {
+            state: UseAsyncState::Ready(Ok(data)),
+            version: ID.fetch_add(1, SeqCst),
+        });
     }
 }
 
@@ -319,32 +392,22 @@ where
     E: 'static,
     D: PartialEq + 'static,
 {
-    let inner = use_state(UseAsyncState::default);
+    let inner = use_reducer(|| AsyncStateVersion {
+        state: UseAsyncState::default(),
+        version: 0,
+    });
 
-    let run = {
-        let inner = inner.clone();
-        Rc::new(move |future| {
-            let inner = inner.clone();
-            spawn_local(async move {
-                // Set state to processing
-                inner.set(UseAsyncState::Processing);
-                // Process and update
-                inner.set(UseAsyncState::Ready(future.await));
-            });
-        })
-    };
-
-    let future_ref = use_mut_latest(Some(f));
+    let factory_ref = use_mut_latest(Some(f));
 
     {
-        let run = run.clone();
+        let inner = inner.clone();
         use_effect_with_deps(
             move |deps| {
-                let future_ref = future_ref.current();
-                let future = (*future_ref.borrow_mut()).take();
+                let factory_ref = factory_ref.current();
+                let factory = (*factory_ref.borrow_mut()).take();
 
-                if let Some(future) = future {
-                    run(future(&deps));
+                if let Some(factory) = factory {
+                    run_task(factory(&deps), inner.clone())
                 }
             },
             deps,
