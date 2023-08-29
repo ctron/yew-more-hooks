@@ -1,6 +1,6 @@
 [package]
 name = "yew-more-hooks"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 authors = [
     "Jens Reimann <ctron@dentrassi.de>"
@@ -14,10 +14,20 @@ repository = "https://github.com/ctron/yew-more-hooks"
 
 [dependencies]
 gloo-utils = "0.1"
-wasm-bindgen-futures = "0.4"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = { version = "0.4", optional = true }
 yew = "0.20"
 
+serde = { version = "1", optional = true }
 yew-hooks = { version = "0.2", optional = true }
+
+[features]
+default = [
+    "async",
+    "page_state"
+]
+async = ["wasm-bindgen-futures", "yew-hooks"]
+page_state = ["serde"]
 
 [dependencies.web-sys]
 version = "0.3"
