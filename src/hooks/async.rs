@@ -407,7 +407,7 @@ where
                 let factory = (*factory_ref.borrow_mut()).take();
 
                 if let Some(factory) = factory {
-                    run_task(factory(&deps), inner.clone())
+                    run_task(factory(deps), inner.clone())
                 }
             },
             deps,
