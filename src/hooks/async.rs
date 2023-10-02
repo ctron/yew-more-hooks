@@ -401,17 +401,14 @@ where
 
     {
         let inner = inner.clone();
-        use_effect_with_deps(
-            move |deps| {
-                let factory_ref = factory_ref.current();
-                let factory = (*factory_ref.borrow_mut()).take();
+        use_effect_with(deps, move |deps| {
+            let factory_ref = factory_ref.current();
+            let factory = (*factory_ref.borrow_mut()).take();
 
-                if let Some(factory) = factory {
-                    run_task(factory(deps), inner.clone())
-                }
-            },
-            deps,
-        )
+            if let Some(factory) = factory {
+                run_task(factory(deps), inner.clone())
+            }
+        })
     };
 
     UseAsyncHandleDeps { inner }

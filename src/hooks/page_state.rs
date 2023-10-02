@@ -96,15 +96,12 @@ where
             .unwrap_or_else(|_| init())
     });
 
-    use_effect_with_deps(
-        |state| {
-            let history = gloo_utils::history();
-            if let Ok(state) = JsValue::from_serde(&state) {
-                let _ = history.replace_state(&state, "");
-            }
-        },
-        (*state).clone(),
-    );
+    use_effect_with((*state).clone(), |state| {
+        let history = gloo_utils::history();
+        if let Ok(state) = JsValue::from_serde(&state) {
+            let _ = history.replace_state(&state, "");
+        }
+    });
 
     UsePageState { state }
 }
@@ -118,10 +115,10 @@ pub fn use_page_state_update<S>(page_state: UsePageState<S>, new_page_state: S)
 where
     for<'de> S: Clone + PartialEq + serde::Serialize + serde::Deserialize<'de> + 'static,
 {
-    use_effect_with_deps(
+    use_effect_with(
+        (page_state.clone(), new_page_state),
         |(page_state, new_page_state)| {
             page_state.set(new_page_state.clone());
         },
-        (page_state.clone(), new_page_state),
     );
 }

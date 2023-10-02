@@ -1,6 +1,6 @@
 [package]
 name = "yew-more-hooks"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = [
     "Jens Reimann <ctron@dentrassi.de>"
@@ -13,13 +13,13 @@ description = "More hooks for Yew"
 repository = "https://github.com/ctron/yew-more-hooks"
 
 [dependencies]
-gloo-utils = "0.1"
+gloo-utils = "0.2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = { version = "0.4", optional = true }
-yew = "0.20"
+yew = "0.21"
 
 serde = { version = "1", optional = true }
-yew-hooks = { version = "0.2", optional = true }
+yew-hooks = { version = "0.3", optional = true }
 
 [features]
 default = [
@@ -38,3 +38,5 @@ features = [
 [package.metadata.docs.rs]
 all-features = true
 
+[patch.crates-io]
+yew-hooks = { git = "https://github.com/ctron/yew-hooks", rev = "0ba4f5c5f331650b1608ad830dfac0ef63700e8d" }
