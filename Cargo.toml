@@ -39,4 +39,4 @@ features = [
 all-features = true
 
 [patch.crates-io]
-yew-hooks = { git = "https://github.com/ctron/yew-hooks", rev = "0ba4f5c5f331650b1608ad830dfac0ef63700e8d" }
+#yew-hooks = { git = "https://github.com/ctron/yew-hooks", rev = "0ba4f5c5f331650b1608ad830dfac0ef63700e8d" }
