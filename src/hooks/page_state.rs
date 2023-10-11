@@ -91,15 +91,31 @@ where
         let history = gloo_utils::history();
         history
             .state()
-            .map_err(|_| {})
-            .and_then(|state| state.into_serde().map_err(|_| ()))
+            .map_err(|_| ())
+            .and_then(|state| {
+                let result = state.into_serde();
+                #[cfg(feature = "log")]
+                let result = result.map_err(|err| {
+                    log::debug!("Failed to deserialize page state: {err}");
+                });
+                result.map_err(|_| ())
+            })
             .unwrap_or_else(|_| init())
     });
 
     use_effect_with((*state).clone(), |state| {
         let history = gloo_utils::history();
-        if let Ok(state) = JsValue::from_serde(&state) {
-            let _ = history.replace_state(&state, "");
+        match JsValue::from_serde(&state) {
+            Ok(state) => {
+                if let Err(_err) = history.replace_state(&state, "") {
+                    #[cfg(feature = "log")]
+                    log::debug!("Failed to replace page state: {:?}", _err.as_string());
+                }
+            }
+            Err(_err) => {
+                #[cfg(feature = "log")]
+                log::warn!("Failed to serialize data: {_err}");
+            }
         }
     });
 
