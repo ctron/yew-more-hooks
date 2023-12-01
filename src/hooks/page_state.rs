@@ -4,6 +4,7 @@
 //!
 //! ```rust
 //! use yew::prelude::*;
+//! use yew_more_hooks::prelude::*;
 //!
 //! #[function_component(Example)]
 //! fn example() -> Html {
