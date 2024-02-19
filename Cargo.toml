@@ -26,9 +26,11 @@ yew-hooks = { version = "0.3", optional = true }
 default = [
     "log",
     "async",
-    "page_state"
+    "page_state",
+    "breakpoint",
 ]
 async = ["wasm-bindgen-futures", "yew-hooks"]
+breakpoint = ["yew-hooks"]
 page_state = ["serde"]
 
 [dependencies.web-sys]

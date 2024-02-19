@@ -2,12 +2,15 @@
 
 #[cfg(feature = "async")]
 pub mod r#async;
+#[cfg(feature = "breakpoint")]
+pub mod breakpoint;
 pub mod map;
 pub mod open;
 #[cfg(feature = "page_state")]
 pub mod page_state;
 pub mod reform;
 
+pub use breakpoint::*;
 pub use map::*;
 pub use open::*;
 #[cfg(feature = "page_state")]
