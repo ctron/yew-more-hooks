@@ -16,11 +16,11 @@ repository = "https://github.com/ctron/yew-more-hooks"
 gloo-utils = "0.2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = { version = "0.4", optional = true }
-yew = "0.21"
+yew = "0.22"
 
 log = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
-yew-hooks = { version = "0.3", optional = true }
+yew-hooks = { version = "0.4", optional = true }
 
 [features]
 default = [
