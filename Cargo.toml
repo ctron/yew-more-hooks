@@ -13,14 +13,14 @@ description = "More hooks for Yew"
 repository = "https://github.com/ctron/yew-more-hooks"
 
 [dependencies]
-gloo-utils = "0.2"
+gloo-utils = "0.3"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = { version = "0.4", optional = true }
-yew = "0.22"
+yew = "0.23"
 
 log = { version = "0.4", optional = true }
 serde = { version = "1", optional = true }
-yew-hooks = { version = "0.4", optional = true }
+yew-hooks = { version = "0.6", optional = true }
 
 [features]
 default = [
